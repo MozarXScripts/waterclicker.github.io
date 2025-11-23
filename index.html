@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Water Bottle Clicker</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;color:white}
+    .game-container{background:rgba(255,255,255,.05);backdrop-filter:blur(15px);border-radius:25px;padding:40px;box-shadow:0 25px 45px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2);max-width:900px;width:95%}
+    h1{text-align:center;margin-bottom:30px;font-size:3em;text-shadow:3px 3px 6px rgba(0,0,0,.5);background:linear-gradient(45deg,#87ceeb,#4682b4);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:40px}
+    .stat-box{background:rgba(255,255,255,.1);padding:20px;border-radius:15px;text-align:center;border:1px solid rgba(255,255,255,.2);transition:transform .3s ease}
+    .stat-box:hover{transform:translateY(-5px);background:rgba(255,255,255,.15)}
+    .stat-label{font-size:.9em;opacity:.8;margin-bottom:5px}
+    .stat-value{font-size:1.8em;font-weight:bold;color:#87ceeb}
+    .game-area{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+    .bottle-section{text-align:center}
+    .water-bottle{width:250px;height:350px;margin:0 auto;position:relative;cursor:pointer;transition:all .2s ease;filter:drop-shadow(0 10px 20px rgba(0,0,0,.3))}
+    .water-bottle:hover{transform:scale(1.05) rotate(2deg)}
+    .water-bottle:active{transform:scale(.98) rotate(-1deg);filter:drop-shadow(0 5px 10px rgba(0,0,0,.2))}
+    .bottle-body{width:100%;height:300px;background:linear-gradient(to bottom,transparent 0%,rgba(135,206,235,.2) 100%);border:4px solid #2c3e50;border-radius:25px 25px 50px 50px;position:relative;overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,.2)}
+    .bottle-cap{width:100px;height:40px;background:linear-gradient(to bottom,#34495e,#2c3e50);border-radius:15px 15px 0 0;margin:0 auto;position:relative;top:-8px;box-shadow:0 -5px 10px rgba(0,0,0,.3)}
+    .water-level{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,#0066cc,#0099ff,#33ccff);transition:height .5s ease;border-radius:0 0 46px 46px;box-shadow:inset 0 0 20px rgba(0,0,0,.2)}
+    .water-surface{position:absolute;top:-5px;left:0;right:0;height:10px;background:rgba(255,255,255,.4);border-radius:50%;animation:wave 3s infinite ease-in-out}
+    @keyframes wave{0%,100%{transform:scaleX(1) scaleY(1)}50%{transform:scaleX(1.1) scaleY(.8)}}
+    .click-effect{position:absolute;pointer-events:none;color:#00ff88;font-weight:bold;font-size:24px;text-shadow:2px 2px 4px rgba(0,0,0,.5);animation:floatUp 1.5s ease-out forwards}
+    @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(1.5)}}
+    .upgrades-section{background:rgba(255,255,255,.05);border-radius:20px;padding:25px;border:1px solid rgba(255,255,255,.1)}
+    .upgrades-title{text-align:center;margin-bottom:25px;font-size:1.8em;color:#87ceeb;text-shadow:2px 2px 4px rgba(0,0,0,.3)}
+    .upgrade-item{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));border:2px solid rgba(255,255,255,.2);border-radius:15px;padding:18px 22px;margin-bottom:12px;cursor:pointer;transition:all .3s ease;gap:12px}
+    .upgrade-item:hover:not(.disabled){transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3);border-color:rgba(135,206,235,.5)}
+    .upgrade-item:active:not(.disabled){transform:translateY(0);box-shadow:0 4px 10px rgba(0,0,0,.2)}
+    .upgrade-item.disabled{opacity:.4;cursor:not-allowed}
+    .upgrade-item.purchased{background:linear-gradient(135deg,rgba(0,255,136,.1),rgba(0,255,136,.05));border-color:rgba(0,255,136,.3)}
+    .upgrade-left{flex:1 1 auto}
+    .upgrade-name{font-weight:600;font-size:1.05em;color:#87ceeb;margin-bottom:4px}
+    .upgrade-description{font-size:.85em;opacity:.8}
+    .upgrade-right{text-align:right;flex-shrink:0}
+    .upgrade-cost{color:#ffd700;font-weight:bold;font-size:1em;background:rgba(255,215,0,.1);padding:4px 12px;border-radius:20px;white-space:nowrap}
+    .upgrade-owned{background:rgba(0,255,136,.2);color:#00ff88;padding:3px 8px;border-radius:12px;font-size:.75em;font-weight:bold;margin-top:4px;display:inline-block}
+    .upgrade-progress{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:8px;overflow:hidden}
+    .upgrade-progress-bar{height:100%;background:linear-gradient(to right,#0099ff,#33ccff);border-radius:2px;transition:width .3s ease}
+    .floating-water{position:fixed;pointer-events:none;opacity:.1;font-size:40px;filter:blur(1px);animation:float 15s infinite ease-in-out}
+    @keyframes float{0%,100%{transform:translateY(0) rotate(0deg) scale(1)}50%{transform:translateY(-30px) rotate(180deg) scale(1.2)}}
+    @media(max-width:768px){.game-area{grid-template-columns:1fr;gap:30px}.water-bottle{width:200px;height:280px}.bottle-body{height:240px}h1{font-size:2.2em}}
+    .footer{text-align:center;margin-top:30px;font-size:.9em;opacity:.7}
+    .reset-btn{margin-top:10px;padding:8px 18px;background:rgba(255,80,80,.25);border:1px solid rgba(255,80,80,.6);color:#ffb8b8;border-radius:8px;cursor:pointer;transition:background .2s}
+    .reset-btn:hover{background:rgba(255,80,80,.4)}
+    .prestige-btn{margin-top:15px;padding:10px 20px;background:rgba(255,215,0,.2);border:2px solid #ffd700;color:#ffd700;border-radius:10px;cursor:pointer;font-weight:bold;transition:all .2s}
+    .prestige-btn:hover{background:rgba(255,215,0,.3);box-shadow:0 0 15px rgba(255,215,0,.5)}
+    .prestige-wrap{display:none;text-align:center;margin-top:15px}
+
+    /*  =====  SECRET CODE BUTTON  =====  */
+    .secret-btn{position:fixed;bottom:15px;right:15px;padding:6px 12px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.3);color:#ccc;border-radius:6px;font-size:.8em;cursor:pointer;transition:all .2s;z-index:999}
+    .secret-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+
+    /*  =====  DEV MENU  =====  */
+    .dev-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);background:rgba(20,20,30,.95);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:20px;width:300px;color:#eee;display:none;flex-direction:column;gap:10px;z-index:1000}
+    .dev-menu.show{display:flex}
+    .dev-header{display:flex;justify-content:space-between;align-items:center;cursor:move}   /* drag handle */
+    .dev-title{font-size:1.1em;font-weight:bold;color:#87ceeb}
+    .dev-close{background:none;border:none;color:#eee;font-size:1.2em;cursor:pointer}
+    .dev-close:hover{color:#ff5c5c}
+    .dev-input{width:100%;padding:6px 8px;border-radius:4px;border:none;background:rgba(255,255,255,.1);color:#fff}
+    .dev-btn{padding:6px;border-radius:4px;border:none;background:#4682b4;color:#fff;cursor:pointer;transition:background .2s}
+    .dev-btn:hover{background:#5691c4}
+
+    /*  =====  MINIMISED BAR  =====  */
+    .dev-min-bar{position:fixed;bottom:15px;left:15px;padding:4px 8px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.3);color:#ccc;border-radius:4px;font-size:.75em;cursor:pointer;display:none;z-index:998}
+    .dev-min-bar:hover{background:rgba(255,255,255,.1)}
+  </style>
+</head>
+
+<body>
+  <!--  floating droplets  -->
+  <div class="floating-water" style="top:10%;left:10%;">💧</div>
+  <div class="floating-water" style="top:20%;right:15%;animation-delay:3s;">💧</div>
+  <div class="floating-water" style="bottom:30%;left:20%;animation-delay:6s;">💧</div>
+  <div class="floating-water" style="bottom:10%;right:10%;animation-delay:9s;">💧</div>
+
+  <!--  SECRET CODE BUTTON  -->
+  <button class="secret-btn" onclick="askSecretCode()">Secret Code</button>
+
+  <!--  DEV MENU  -->
+  <div class="dev-menu" id="devMenu">
+    <div class="dev-header" id="devHeader">
+      <span class="dev-title">🛠️ Dev Menu</span>
+      <button class="dev-close" onclick="toggleDev(false)">×</button>
+    </div>
+
+    <label>Set Water</label>
+    <input type="number" class="dev-input" id="devWater" min="0" value="0">
+    <button class="dev-btn" onclick="setWater()">Apply</button>
+
+    <label>Set Click Power</label>
+    <input type="number" class="dev-input" id="devClickPower" min="1" value="1">
+    <button class="dev-btn" onclick="setClickPower()">Apply</button>
+
+    <label>Set Multiplier</label>
+    <input type="number" class="dev-input" id="devMult" min="0.1" step="0.1" value="1">
+    <button class="dev-btn" onclick="setMult()">Apply</button>
+
+    <label>Set Auto/sec</label>
+    <input type="number" class="dev-input" id="devAuto" min="0" value="0">
+    <button class="dev-btn" onclick="setAuto()">Apply</button>
+
+    <label>Set Clicks</label>
+    <input type="number" class="dev-input" id="devClicks" min="0" value="0">
+    <button class="dev-btn" onclick="setClicks()">Apply</button>
+
+    <button class="dev-btn" onclick="instantPrestige()">Instant Prestige (+0.1×)</button>
+    <button class="dev-btn" onclick="devReset()">Dev Hard Reset</button>
+  </div>
+
+  <!--  MINIMISED BAR  -->
+  <div class="dev-min-bar" id="devMinBar" onclick="restoreDev()">🛠️ Dev Menu</div>
+
+  <div class="game-container">
+    <h1>💧 Water Bottle Clicker 💧</h1>
+    <div class="stats">
+      <div class="stat-box"><div class="stat-label">Water Collected</div><div class="stat-value" id="water-count">0</div></div>
+      <div class="stat-box"><div class="stat-label">Water per Click</div><div class="stat-value" id="water-per-click">1</div></div>
+      <div class="stat-box"><div class="stat-label">Auto Collection</div><div class="stat-value" id="auto-rate">0</div></div>
+      <div class="stat-box"><div class="stat-label">Total Clicks</div><div class="stat-value" id="total-clicks">0</div></div>
+      <div class="stat-box" id="multiplier-box" style="display:none"><div class="stat-label">Multiplier</div><div class="stat-value" id="multiplier">1.0×</div></div>
+    </div>
+
+    <div class="game-area">
+      <div class="bottle-section">
+        <div class="water-bottle" id="water-bottle">
+          <div class="bottle-cap"></div>
+          <div class="bottle-body">
+            <div class="water-level" id="water-level"><div class="water-surface"></div></div>
+          </div>
+        </div>
+        <p style="margin-top:25px;opacity:.8;font-size:1.1em;">Click the bottle to collect water!</p>
+        <div class="prestige-wrap" id="prestige-wrap">
+          <button class="prestige-btn" onclick="prestige()">Prestige (reset for +0.1× multiplier)</button>
+        </div>
+      </div>
+
+      <div class="upgrades-section">
+        <h2 class="upgrades-title">💪 Upgrades</h2>
+        <div id="upgrades-container"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Made by Calvin Crouch<br>
+      <button class="reset-btn" onclick="resetGame()">Reset Game</button>
+    </div>
+  </div>
+
+  <script>
+    //  =====  SAVE / LOAD  =====
+    function loadGame(){
+      const s=localStorage.getItem('waterClickerSave');
+      if(s){
+        const l=JSON.parse(s);
+        gameState={...gameState,...l};
+        gameState.upgrades={...gameState.upgrades,...l.upgrades};
+      }
+    }
+    function saveGame(){
+      localStorage.setItem('waterClickerSave',JSON.stringify(gameState));
+    }
+
+    //  =====  GAME STATE  =====
+    let gameState={
+      water:0,
+      totalClicks:0,
+      waterPerClick:1,
+      autoRate:0,
+      multiplier:1,
+      totalWaterAllTime:0,
+      upgrades:{
+        betterBottle:      {name:"Better Bottle",description:"+1 per click",cost:50,owned:0,maxLevel:50,effect:()=>{gameState.waterPerClick+=1}},
+        autoDropper:       {name:"Auto Dropper",description:"+1/sec auto",cost:200,owned:0,maxLevel:25,effect:()=>{gameState.autoRate+=1}},
+        biggerBottle:      {name:"Bigger Bottle",description:"Double per click",cost:500,owned:0,maxLevel:5,effect:()=>{gameState.waterPerClick*=2}},
+        megaDropper:       {name:"Mega Dropper",description:"+10/sec auto",cost:2000,owned:0,maxLevel:10,effect:()=>{gameState.autoRate+=10}},
+        superClick:        {name:"Super Click",description:"Triple per click",cost:5000,owned:0,maxLevel:3,effect:()=>{gameState.waterPerClick*=3}},
+        waterFall:         {name:"Water Fall",description:"+100/sec auto",cost:25000,owned:0,maxLevel:5,effect:()=>{gameState.autoRate+=100}},
+        oceanGenerator:    {name:"Ocean Generator",description:"+1000/sec auto",cost:100000,owned:0,maxLevel:3,effect:()=>{gameState.autoRate+=1000}}
+      }
+    };
+
+    //  =====  UTILS  =====
+    function formatNumber(n){
+      if(n>=1e9)return(n/1e9).toFixed(2)+'B';
+      if(n>=1e6)return(n/1e6).toFixed(2)+'M';
+      if(n>=1e3)return(n/1e3).toFixed(2)+'K';
+      return Math.floor(n).toString();
+    }
+
+    //  =====  DISPLAY  =====
+    function updateDisplay(){
+      const m=gameState.multiplier;
+      document.getElementById('water-count').textContent=formatNumber(gameState.water);
+      document.getElementById('water-per-click').textContent=formatNumber(gameState.waterPerClick*m);
+      document.getElementById('auto-rate').textContent=formatNumber(gameState.autoRate*m);
+      document.getElementById('total-clicks').textContent=formatNumber(gameState.totalClicks);
+      document.getElementById('multiplier').textContent=m.toFixed(1)+'×';
+
+      if(gameState.totalWaterAllTime>=10000){
+        document.getElementById('multiplier-box').style.display='block';
+        document.getElementById('prestige-wrap').style.display='block';
+      }
+      const newMult=1+Math.floor(gameState.totalWaterAllTime/10000)*0.1;
+      if(newMult>gameState.multiplier){
+        gameState.multiplier=newMult;
+        document.getElementById('multiplier').textContent=newMult.toFixed(1)+'×';
+      }
+
+      const lvl=document.getElementById('water-level');
+      const p=Math.min((gameState.water%2000)/2000*100,100);
+      lvl.style.height=`${p}%`;
+    }
+
+    //  =====  CLICK  =====
+    document.getElementById('water-bottle').addEventListener('click',function(e){
+      const gained=gameState.waterPerClick*gameState.multiplier;
+      gameState.water+=gained;
+      gameState.totalWaterAllTime+=gained;
+      gameState.totalClicks+=1;
+      createClickEffect(e.clientX,e.clientY);
+      updateDisplay();
+      renderUpgrades();
+      saveGame();
+    });
+
+    function createClickEffect(x,y){
+      const d=document.createElement('div');
+      d.className='click-effect';
+      d.textContent=`+${formatNumber(gameState.waterPerClick*gameState.multiplier)}`;
+      d.style.left=`${x}px`;
+      d.style.top=`${y}px`;
+      document.body.appendChild(d);
+      setTimeout(()=>d.remove(),1500);
+    }
+
+    //  =====  UPGRADES  =====
+    function renderUpgrades(){
+      const c=document.getElementById('upgrades-container');
+      c.innerHTML='';
+      const m=gameState.multiplier;
+      for(const[k,u]of Object.entries(gameState.upgrades)){
+        const can=gameState.water>=u.cost, max=u.owned>=u.maxLevel, prog=(u.owned/u.maxLevel)*100;
+        const div=document.createElement('div');
+        div.className='upgrade-item'+(can&&!max?'':' disabled')+(u.owned>0?' purchased':'');
+        div.innerHTML=`
+          <div class="upgrade-left">
+            <div class="upgrade-name">${u.name}</div>
+            <div class="upgrade-description">${u.description}</div>
+          </div>
+          <div class="upgrade-right">
+            <div class="upgrade-cost">${max?'MAX':`${formatNumber(u.cost)} 💧`}</div>
+            ${u.owned?`<div class="upgrade-owned">Lv.${u.owned}</div>`:''}
+          </div>
+          <div class="upgrade-progress"><div class="upgrade-progress-bar" style="width:${prog}%"></div></div>
+        `;
+        div.addEventListener('click',()=>purchaseUpgrade(k));
+        c.appendChild(div);
+      }
+    }
+
+    function purchaseUpgrade(k){
+      const u=gameState.upgrades[k];
+      if(gameState.water>=u.cost&&u.owned<u.maxLevel){
+        gameState.water-=u.cost;
+        u.owned+=1;
+        u.effect();
+        u.cost=Math.floor(u.cost*(1.8+u.owned*.1));
+        updateDisplay();
+        renderUpgrades();
+        saveGame();
+      }
+    }
+
+    //  =====  PRESTIGE  =====
+    function prestige(){
+      if(gameState.totalWaterAllTime<10000)return alert('Need at least 10 000 total water to prestige!');
+      const newMult=1+Math.floor(gameState.totalWaterAllTime/10000)*0.1;
+      if(!confirm(`Prestige now for an extra +0.1× multiplier?\nYou will restart with ${newMult.toFixed(1)}× permanently.`))return;
+
+      gameState={
+        water:0,
+        totalClicks:0,
+        waterPerClick:1,
+        autoRate:0,
+        multiplier:newMult,
+        totalWaterAllTime:0,
+        upgrades:{
+          betterBottle:      {name:"Better Bottle",description:"+1 per click",cost:50,owned:0,maxLevel:50,effect:()=>{gameState.waterPerClick+=1}},
+          autoDropper:       {name:"Auto Dropper",description:"+1/sec auto",cost:200,owned:0,maxLevel:25,effect:()=>{gameState.autoRate+=1}},
+          biggerBottle:      {name:"Bigger Bottle",description:"Double per click",cost:500,owned:0,maxLevel:5,effect:()=>{gameState.waterPerClick*=2}},
+          megaDropper:       {name:"Mega Dropper",description:"+10/sec auto",cost:2000,owned:0,maxLevel:10,effect:()=>{gameState.autoRate+=10}},
+          superClick:        {name:"Super Click",description:"Triple per click",cost:5000,owned:0,maxLevel:3,effect:()=>{gameState.waterPerClick*=3}},
+          waterFall:         {name:"Water Fall",description:"+100/sec auto",cost:25000,owned:0,maxLevel:5,effect:()=>{gameState.autoRate+=100}},
+          oceanGenerator:    {name:"Ocean Generator",description:"+1000/sec auto",cost:100000,owned:0,maxLevel:3,effect:()=>{gameState.autoRate+=1000}}
+        }
+      };
+      saveGame();
+      updateDisplay();
+      renderUpgrades();
+    }
+
+    //  =====  RESET  =====
+    function resetGame(){
+      if(!confirm('Erase ALL progress (including multiplier) and start over?'))return;
+      localStorage.removeItem('waterClickerSave');
+      location.reload();
+    }
+
+    //  =====  AUTO  =====
+    setInterval(()=>{
+      if(gameState.autoRate>0){
+        const gained=gameState.autoRate*gameState.multiplier/10;
+        gameState.water+=gained;
+        gameState.totalWaterAllTime+=gained;
+        updateDisplay();
+      }
+    },100);
+
+    setInterval(saveGame,15000);
+
+    //  =====  SECRET CODE SYSTEM  =====
+    const SECRET_CODE='calvinwashere';
+
+    function askSecretCode(){
+      const ans=prompt('Enter secret code:');
+      if(ans===SECRET_CODE){
+        toggleDev(true);
+      }else{
+        alert('Nope.');
+      }
+    }
+
+    //  =====  DEV MENU FUNCTIONS  =====
+    function setWater(){
+      const v=Number(document.getElementById('devWater').value);
+      if(v<0)return;
+      gameState.water=v;
+      updateDisplay();renderUpgrades();saveGame();
+    }
+    function setClickPower(){
+      const v=Number(document.getElementById('devClickPower').value);
+      if(v<1)return;
+      gameState.waterPerClick=v;
+      updateDisplay();saveGame();
+    }
+    function setMult(){
+      const v=Number(document.getElementById('devMult').value);
+      if(v<0.1)return;
+      gameState.multiplier=v;
+      updateDisplay();saveGame();
+    }
+    function setAuto(){
+      const v=Number(document.getElementById('devAuto').value);
+      if(v<0)return;
+      gameState.autoRate=v;
+      updateDisplay();saveGame();
+    }
+    function setClicks(){
+      const v=Number(document.getElementById('devClicks').value);
+      if(v<0)return;
+      gameState.totalClicks=v;
+      updateDisplay();saveGame();
+    }
+    function instantPrestige(){
+      gameState.totalWaterAllTime+=10000;
+      prestige();
+    }
+    function devReset(){
+      if(!confirm('Dev hard-reset everything?'))return;
+      localStorage.removeItem('waterClickerSave');
+      location.reload();
+    }
+
+    //  =====  DEV MENU SHOW / HIDE / MINIMISE  =====
+    function toggleDev(show){
+      const d=document.getElementById('devMenu');
+      const b=document.getElementById('devMinBar');
+      if(show){
+        d.classList.add('show');
+        b.style.display='none';
+      }else{
+        d.classList.remove('show');
+        b.style.display='block';
+      }
+    }
+    function restoreDev(){
+      toggleDev(true);
+    }
+
+    //  =====  DRAG DEV MENU  =====
+    const devHdr=document.getElementById('devHeader');
+    const devMenu=document.getElementById('devMenu');
+    let dragging=false,offsetX=0,offsetY=0;
+
+    devHdr.addEventListener('mousedown',function(e){
+      dragging=true;
+      offsetX=e.clientX-devMenu.offsetLeft;
+      offsetY=e.clientY-devMenu.offsetTop;
+    });
+    document.addEventListener('mousemove',function(e){
+      if(!dragging)return;
+      devMenu.style.left=e.clientX-offsetX+'px';
+      devMenu.style.top=e.clientY-offsetY+'px';
+      devMenu.style.transform='none';
+    });
+    document.addEventListener('mouseup',()=>dragging=false);
+
+    //  =====  INIT  =====
+    loadGame();
+    updateDisplay();
+    renderUpgrades();
+  </script>
+</body>
+</html>
+<script>
+/*  satisfying water-drop  */
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function playWater(){
+  const now=audioCtx.currentTime;
+  // drop layer
+  const drop=audioCtx.createOscillator();
+  const dropG=audioCtx.createGain();
+  drop.type='sine';
+  drop.frequency.setValueAtTime(900,now);
+  drop.frequency.exponentialRampToValueAtTime(350,now+0.1);
+  dropG.gain.setValueAtTime(0.25,now);
+  dropG.gain.exponentialRampToValueAtTime(0.0001,now+0.12);
+  drop.connect(dropG);
+  dropG.connect(audioCtx.destination);
+  drop.start(); drop.stop(now+0.13);
+
+  // splash layer (filtered noise)
+  const noise=audioCtx.createBufferSource();
+  const noiseG=audioCtx.createGain();
+  const filter=audioCtx.createBiquadFilter();
+  const buffer=audioCtx.createBuffer(1, audioCtx.sampleRate*0.08, audioCtx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+  noise.buffer=buffer;
+  filter.type='bandpass';
+  filter.frequency.value=1200;
+  filter.Q.value=0.8;
+  noiseG.gain.setValueAtTime(0.08,now);
+  noiseG.gain.exponentialRampToValueAtTime(0.0001,now+0.08);
+  noise.connect(filter); filter.connect(noiseG); noiseG.connect(audioCtx.destination);
+  noise.start(); noise.stop(now+0.08);
+}
+
+/*  hook to bottle  */
+document.getElementById('water-bottle').addEventListener('click',()=>{
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  playWater();
+});
+</script>
+<script>
