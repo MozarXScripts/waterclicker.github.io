@@ -459,3 +459,52 @@ document.getElementById('water-bottle').addEventListener('click',()=>{
 });
 </script>
 <script>
+<!--  =====  STAGE 1 : MATH QUIZ  =====  -->
+<div id="mathStage" style="position:fixed;inset:0;background:#f5f7fa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
+  <h2 style="margin-bottom:20px;color:#333">Quick Math → Smart Points</h2>
+  <div id="question" style="font-size:1.5rem;margin-bottom:15px;color:#333"></div>
+  <input id="answer" type="number" style="padding:8px 12px;font-size:1.1rem;width:160px;text-align:center;border:2px solid #4682b4;border-radius:6px">
+  <button onclick="checkAnswer()" style="margin-top:10px;padding:8px 18px;font-size:1rem;background:#4682b4;color:#fff;border:none;border-radius:6px;cursor:pointer">Submit</button>
+  <div id="score" style="margin-top:15px;font-size:1.1rem;color:#333">Smart Points: <span id="smart">0</span></div>
+  <button id="learnBetterBtn" onclick="enterWaterGame()" style="margin-top:20px;padding:10px 20px;font-size:1rem;background:#2a5298;color:#fff;border:none;border-radius:6px;cursor:pointer">Learn Better →</button>
+</div>
+
+<script>
+/*  =====  QUIZ LOGIC  =====  */
+let smartPoints=0;
+const questions=[
+  {q:"7 × 8",a:56},{q:"12 + 15",a:27},{q:"9²",a:81},{q:"√144",a:12},{q:"3³",a:27}
+];
+let curQ=0;
+
+function showQuestion(){
+  document.getElementById('question').textContent=questions[curQ].q;
+  document.getElementById('answer').value='';
+  document.getElementById('answer').focus();
+}
+function checkAnswer(){
+  const val=Number(document.getElementById('answer').value);
+  if(val===questions[curQ].a){
+    smartPoints+=10;
+    document.getElementById('smart').textContent=smartPoints;
+    curQ++;
+    if(curQ<questions.length)showQuestion();
+  }else{
+    alert('Try again!');
+  }
+}
+showQuestion();
+
+/*  =====  FADE TO WATER GAME  =====  */
+function enterWaterGame(){
+  // fade out quiz
+  const math=document.getElementById('mathStage');
+  math.style.transition='opacity 0.6s';
+  math.style.opacity='0';
+  setTimeout(()=>math.remove(),600);
+
+  // bonus: convert smart points → starting water
+  gameState.water+=smartPoints;
+  updateDisplay();
+}
+</script>
